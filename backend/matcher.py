@@ -79,13 +79,13 @@ class Matcher:
             if key in seen:
                 continue
             seen.add(key)
-            match = self._score(s, q_fold, score, f, field)
+            raw_score = self._score(s, q_fold, score, f, field)
             candidates.append({
                 "id": s["id"], "name": s["name"],
                 "kind": KIND_LABELS.get(s["kind"], s["kind"]),
                 "neighborhood": s["neighborhood"], "district": s["district"],
-                "lat": s["lat"], "lng": s["lng"], "match": match,
-                "source": s["source"],
+                "lat": s["lat"], "lng": s["lng"], "match": min(100, raw_score),
+                "source": s["source"], "_raw": raw_score,
             })
 
         # exact-name duplicates in different neighborhoods must ALL survive:
@@ -101,15 +101,20 @@ class Matcher:
                             "kind": KIND_LABELS.get(s["kind"], s["kind"]),
                             "neighborhood": s["neighborhood"], "district": s["district"],
                             "lat": s["lat"], "lng": s["lng"],
-                            "match": self._score(s, q_fold, 100, f, field),
+                            "match": min(100, self._score(s, q_fold, 100, f, field)),
                             "source": s["source"],
+                            "_raw": self._score(s, q_fold, 100, f, field),
                         })
 
-        candidates.sort(key=lambda c: -c["match"])
+        candidates.sort(key=lambda c: -c["_raw"])
+        for c in candidates:
+            c.pop("_raw", None)
         return candidates[:limit]
 
     def _score(self, s: dict, q_fold: str, name_score: float, f: dict, field: str) -> int:
         score = float(name_score)
+        if fold(s["norm"]) == q_fold:
+            score = 100.0  # exact name match
         # neighborhood agreement
         if f.get("neighborhood") and s["neighborhood"]:
             ns = fuzz.ratio(fold(f["neighborhood"]), fold(s["neighborhood"]))
@@ -118,15 +123,20 @@ class Matcher:
         if f.get("district") and s["district"]:
             try:
                 if int(f["district"]) == int(s["district"]):
-                    score = min(100, score + 8)
+                    score += 8
                 else:
                     score -= 18
             except ValueError:
                 pass
+        # prefer tagged streets (known district/neighborhood) over untagged ones
+        if s["district"]:
+            score += 3
+        if s["neighborhood"]:
+            score += 1
         # learned entries get a small trust bonus
         if s.get("source") == "learned":
-            score = min(100, score + 4)
-        return max(1, min(100, round(score)))
+            score += 4
+        return max(1, round(score))
 
     # ------------------------------------------------------------- autocomplete
     def autocomplete(self, q: str, limit: int = 8) -> list[dict]:

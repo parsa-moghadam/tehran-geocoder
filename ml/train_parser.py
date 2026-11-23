@@ -36,6 +36,40 @@ def load_samples():
     return samples
 
 
+def feedback_samples() -> list[dict]:
+    """Turn user corrections into labeled training samples (learning loop)."""
+    import sqlite3
+    db_path = ROOT / "data" / "tehran.db"
+    if not db_path.exists():
+        return []
+    conn = sqlite3.connect(str(db_path))
+    conn.row_factory = sqlite3.Row
+    out = []
+    for row in conn.execute("SELECT query, street_id FROM feedback"):
+        name = None
+        if row["street_id"]:
+            r = conn.execute("SELECT name FROM streets WHERE id=?", (row["street_id"],)).fetchone()
+            if r:
+                name = r[0]
+        if not name:
+            name = row["query"]
+        from backend.normalize import normalize, tokenize
+        name_toks = tokenize(name)
+        if not name_toks:
+            continue
+        toks = tokenize(row["query"])
+        labels, j = [], 0
+        for tok in toks:
+            if j < len(name_toks) and tok == name_toks[j]:
+                labels.append("B-STREET" if j == 0 else "I-STREET")
+                j += 1
+            else:
+                labels.append("O")
+        if j == len(name_toks):
+            out.append({"tokens": toks, "labels": labels})
+    return out
+
+
 def field_accuracy(model, fixtures: list[dict], neighborhoods: set[str]) -> dict:
     """Field-level accuracy on the golden set."""
     from backend.parser import FIELDS
@@ -69,6 +103,10 @@ def main():
         print("ERROR: run ml/generate_data.py first")
         return 1
     samples = load_samples()
+    fb = feedback_samples()
+    if fb:
+        print(f"including {len(fb)} user-correction samples in training")
+        samples += fb * 5  # corrections are high-value: 5x weight
     random.Random(7).shuffle(samples)
     split = int(len(samples) * 0.9)
     train, test = samples[:split], samples[split:]
