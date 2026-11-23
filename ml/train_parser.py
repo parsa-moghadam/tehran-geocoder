@@ -112,14 +112,15 @@ def main():
                 print(f"REJECTED: golden accuracy for '{k}' = {acc[k]} < 0.8")
 
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    version = int(time.time())
+    versioned = MODEL_DIR / f"parser-{version}.joblib"
+    joblib.dump(crf, versioned)
+    print(f"saved candidate {versioned.name}")
     if golden_ok:
-        version = int(time.time())
-        versioned = MODEL_DIR / f"parser-{version}.joblib"
-        joblib.dump(crf, versioned)
         joblib.dump(crf, MODEL_DIR / "parser.joblib")
-        print(f"saved {versioned.name} + parser.joblib")
+        print("DEPLOYED -> parser.joblib")
     else:
-        print("model NOT deployed; previous parser.joblib kept")
+        print("NOT deployed (golden gate failed); previous parser.joblib kept")
     return 0
 
 

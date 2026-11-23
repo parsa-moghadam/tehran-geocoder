@@ -56,6 +56,12 @@ def labeled(tokens: list[tuple[str, str]]) -> dict:
 
 def gen_one(streets: list[str], alleys: list[str], neighs: list[str], rng: random.Random) -> dict:
     street = zwnj_variant(rng.choice(streets))
+    # multi-word street names: directional suffixes / compound names
+    r = rng.random()
+    if r < 0.18:
+        street += " " + rng.choice(["شمالی", "جنوبی", "شرقی", "غربی"])
+    elif r < 0.26:
+        street += " " + rng.choice(streets)
     parts: list[tuple[str, str]] = []
 
     has_city = rng.random() < 0.75
@@ -78,6 +84,20 @@ def gen_one(streets: list[str], alleys: list[str], neighs: list[str], rng: rando
     skw = rng.choice(STREET_KW)
     street_tokens = [(skw, "KW")] + [(w, "B-STREET" if i == 0 else "I-STREET")
                                      for i, w in enumerate(street.split())]
+
+    # optional leading boulevard (parser keeps the LAST street phrase)
+    if rng.random() < 0.1:
+        bname = zwnj_variant(rng.choice(streets))
+        street_tokens = ([("بلوار", "KW")] +
+                         [(w, "B-STREET" if i == 0 else "I-STREET")
+                          for i, w in enumerate(bname.split())] + street_tokens)
+
+    # landmark noise phrases: tokens are irrelevant (O)
+    if rng.random() < 0.15:
+        landmark = rng.choice(streets)
+        phrase = rng.choice(["بالاتر از", "پایین تر از", "نبش", "جنب", "روبروی"])
+        street_tokens += [(w, "O") for w in phrase.split()]
+        street_tokens += [(w, "O") for w in landmark.split()]
 
     alley_tokens = []
     if has_alley:

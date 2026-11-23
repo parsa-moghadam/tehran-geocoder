@@ -50,14 +50,18 @@ class AddressParser:
             confidence = 0.5
 
         fields: dict[str, str] = {}
+        prev = None
         for tok, lab in zip(tokens, labels):
             key = FIELDS.get(lab)
             if key is None:
+                prev = lab
                 continue
-            if key in fields and lab.startswith("I-"):
+            cont = lab.startswith("I-") or (key == "neighborhood" and prev == "NEIGH")
+            if key in fields and cont:
                 fields[key] += " " + tok
             else:
                 fields[key] = tok
+            prev = lab
         if "district" in fields:
             fields["district"] = "".join(c for c in fields["district"] if c.isdigit())
         return {"fields": fields, "confidence": round(float(confidence), 3),

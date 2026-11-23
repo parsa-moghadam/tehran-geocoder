@@ -18,13 +18,7 @@ for i, (p, a) in enumerate(zip(_PERSIAN_DIGITS, _ARABIC_DIGITS)):
 _LETTER_MAP = {
     ord("ي"): "ی",
     ord("ك"): "ک",
-    ord("ة"): "ه",
-    ord("أ"): "ا",
-    ord("إ"): "ا",
-    ord("آ"): "ا",
-    ord("ؤ"): "و",
-    ord("ئ"): "ی",
-    ord("ء"): "",
+
     ord("\u200c"): " ",   # ZWNJ -> space (ولی‌عصر -> ولی عصر)
     ord("\u200d"): "",    # ZWJ
     ord("\u200e"): "",    # LRM
@@ -52,9 +46,16 @@ def normalize(text: str) -> str:
     return text
 
 
+# Aggressive letter folding used ONLY for fuzzy matching, never for parsed text
+_FOLD_MAP = {
+    ord("آ"): "ا", ord("أ"): "ا", ord("إ"): "ا",
+    ord("ة"): "ه", ord("ؤ"): "و", ord("ئ"): "ی", ord("ء"): "",
+}
+
+
 def fold(text: str) -> str:
     """Aggressive form for fuzzy name comparison (spaces removed)."""
-    return normalize(text).replace(" ", "")
+    return normalize(text).translate(_FOLD_MAP).replace(" ", "")
 
 
 def tokenize(text: str) -> list[str]:
