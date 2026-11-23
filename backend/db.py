@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS streets (
     district INTEGER,
     lat REAL NOT NULL,
     lng REAL NOT NULL,
-    source TEXT NOT NULL DEFAULT 'osm'
+    source TEXT NOT NULL DEFAULT 'osm',
+    muni_id TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_streets_norm ON streets(norm);
 CREATE INDEX IF NOT EXISTS idx_streets_neigh ON streets(neighborhood);
@@ -40,8 +41,11 @@ CREATE TABLE IF NOT EXISTS addresses (
     street TEXT,
     housenumber TEXT,
     lat REAL,
-    lng REAL
+    lng REAL,
+    source TEXT NOT NULL DEFAULT 'osm',
+    property_id TEXT
 );
+CREATE INDEX IF NOT EXISTS idx_addresses_number ON addresses(housenumber);
 
 CREATE TABLE IF NOT EXISTS feedback (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -60,7 +64,22 @@ def connect(db_path: Path = DB_PATH) -> sqlite3.Connection:
     conn = sqlite3.connect(str(db_path), check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    _migrate(conn)
     return conn
+
+
+def _migrate(conn: sqlite3.Connection):
+    """Add newer columns to databases built before the municipality import."""
+    for table, column, ddl in (
+        ("streets", "muni_id", "TEXT"),
+        ("addresses", "source", "TEXT NOT NULL DEFAULT 'osm'"),
+        ("addresses", "property_id", "TEXT"),
+    ):
+        cols = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if column not in cols:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_addresses_number ON addresses(housenumber)")
+    conn.commit()
 
 
 def load_districts_geojson(conn: sqlite3.Connection, path: Path) -> int:

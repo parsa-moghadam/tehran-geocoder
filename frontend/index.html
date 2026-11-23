@@ -84,7 +84,7 @@ function pctColor(p){ return p >= 85 ? 'var(--ok)' : p >= 60 ? 'var(--warn)' : '
 async function loadStats(){
   try {
     const s = await (await fetch('/api/stats')).json();
-    $('stats').textContent = `${s.streets.toLocaleString('fa')} خیابان · ${s.neighborhoods} محله · ${s.districts} منطقه · ${s.learned} آموخته‌شده` + (s.parser_available ? ' · مدل CRF فعال' : ' · مدل هنوز آموزش ندیده');
+    $('stats').textContent = `${s.streets.toLocaleString('fa')} خیابان · ${s.neighborhoods} محله · ${s.districts} منطقه · ${s.learned} آموخته‌شده` + (s.municipality_streets ? ` · ${s.municipality_streets.toLocaleString('fa')} اسم شهرداری` : '') + (s.municipality_addresses ? ` · ${s.municipality_addresses.toLocaleString('fa')} پلاک` : '') + (s.parser_available ? ' · مدل CRF فعال' : ' · مدل هنوز آموزش ندیده');
   } catch(e){}
 }
 loadStats();
@@ -108,7 +108,7 @@ function renderResults(data){
     el.className = 'card';
     el.innerHTML = `
       <div class="top"><span class="name">${c.name}</span><span class="pct" style="color:${pctColor(c.match)}">${c.match}٪</span></div>
-      <div class="meta">${c.kind}${c.neighborhood ? ' · ' + c.neighborhood : ''}${c.district ? ' · منطقه ' + c.district : ''}${c.source === 'learned' ? ' · 🎓 آموخته‌شده' : ''}</div>
+      <div class="meta">${c.kind}${c.neighborhood ? ' · ' + c.neighborhood : ''}${c.district ? ' · منطقه ' + c.district : ''}${c.source === 'learned' ? ' · 🎓 آموخته‌شده' : ''}${c.source === 'tehran_muni' ? ' · 🏙 شهرداری' : ''}</div>
       <div class="bar"><i style="width:${c.match}%;background:${pctColor(c.match)}"></i></div>`;
     el.onclick = () => select(c, el, i);
     box.appendChild(el);

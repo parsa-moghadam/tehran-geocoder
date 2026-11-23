@@ -77,8 +77,13 @@ def stats():
     n_neigh = conn.execute("SELECT COUNT(*) c FROM neighborhoods").fetchone()["c"]
     n_dist = conn.execute("SELECT COUNT(*) c FROM districts").fetchone()["c"]
     n_fb = conn.execute("SELECT COUNT(*) c FROM feedback").fetchone()["c"]
+    n_muni_streets = conn.execute(
+        "SELECT COUNT(*) c FROM streets WHERE source='tehran_muni'").fetchone()["c"]
+    n_muni_addr = conn.execute(
+        "SELECT COUNT(*) c FROM addresses WHERE source='tehran_muni'").fetchone()["c"]
     return {"streets": n_streets, "learned": n_learned, "neighborhoods": n_neigh,
-            "districts": n_dist, "feedback": n_fb, "parser_available": parser.available}
+            "districts": n_dist, "feedback": n_fb, "parser_available": parser.available,
+            "municipality_streets": n_muni_streets, "municipality_addresses": n_muni_addr}
 
 
 @app.get("/")

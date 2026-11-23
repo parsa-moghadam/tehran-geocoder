@@ -148,11 +148,22 @@ def main():
         fixtures = json.loads(FIXTURES.read_text(encoding="utf-8"))
         acc = field_accuracy(crf, fixtures, neighborhoods)
         print("golden-set field accuracy:", json.dumps(acc, ensure_ascii=False))
-        # gate: street/number must stay >= 0.8 on the golden set
+        # gate 1: street/number must stay >= 0.8 on the golden set
         for k in ("street", "number"):
             if acc[k] is not None and acc[k] < 0.8:
                 golden_ok = False
                 print(f"REJECTED: golden accuracy for '{k}' = {acc[k]} < 0.8")
+        # gate 2: no regression on ANY field vs the currently deployed model
+        deployed = MODEL_DIR / "parser.joblib"
+        if deployed.exists():
+            try:
+                old_acc = field_accuracy(joblib.load(deployed), fixtures, neighborhoods)
+                for k, old in old_acc.items():
+                    if old is not None and acc.get(k) is not None and acc[k] < old:
+                        golden_ok = False
+                        print(f"REJECTED: regression on '{k}': {old} -> {acc[k]}")
+            except Exception as exc:
+                print(f"could not compare with deployed model: {exc}")
 
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     version = int(time.time())
