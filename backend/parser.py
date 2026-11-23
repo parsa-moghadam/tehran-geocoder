@@ -44,7 +44,7 @@ class AddressParser:
         X = [sent_features(tokens, self.neighborhoods)]
         labels = self.model.predict(X)[0]
         try:
-            probs = self.model.predict_marginal_proba(X)[0]
+            probs = self.model.predict_marginals(X)[0]
             confidence = sum(max(p.values()) for p in probs) / len(probs)
         except Exception:
             confidence = 0.5

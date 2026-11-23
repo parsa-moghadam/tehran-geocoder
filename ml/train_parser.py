@@ -79,14 +79,18 @@ def field_accuracy(model, fixtures: list[dict], neighborhoods: set[str]) -> dict
         tokens = tokenize(fx["input"])
         labels = model.predict([sent_features(tokens, neighborhoods)])[0]
         pred: dict[str, str] = {}
+        prev = None
         for tok, lab in zip(tokens, labels):
             key = FIELDS.get(lab)
             if key is None:
+                prev = lab
                 continue
-            if key in pred and lab.startswith("I-"):
+            cont = lab.startswith("I-") or (key == "neighborhood" and prev == "NEIGH")
+            if key in pred and cont:
                 pred[key] += " " + tok
             else:
                 pred[key] = tok
+            prev = lab
         for k in total:
             expected = fx["expected"].get(k)
             if expected is None:
@@ -117,6 +121,7 @@ def main():
     X_test = [sent_features(s["tokens"]) for s in test]
     y_test = [s["labels"] for s in test]
 
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
     crf = sklearn_crfsuite.CRF(
         algorithm="lbfgs", c1=0.1, c2=0.1,
         max_iterations=120, all_possible_transitions=True,

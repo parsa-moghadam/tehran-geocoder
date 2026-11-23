@@ -23,7 +23,7 @@ parser = get_parser(neighborhoods=set(matcher.neighborhoods))
 
 
 @app.get("/api/geocode")
-def geocode(q: str, limit: int = 10):
+def geocode(q: str, limit: int = 20):
     if not q or not q.strip():
         raise HTTPException(400, "query is empty")
     parsed = parser.parse(q)
@@ -63,6 +63,11 @@ def feedback(fb: Feedback):
         raise HTTPException(400, "coordinates outside Tehran area")
     fid = matcher.learn(fb.query, fb.street_id, fb.lat, fb.lng)
     return {"ok": True, "feedback_id": fid}
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "streets": len(matcher.streets), "parser": parser.available}
 
 
 @app.get("/api/stats")
