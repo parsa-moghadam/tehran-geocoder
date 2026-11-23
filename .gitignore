@@ -1,0 +1,28 @@
+# Large data files (downloaded/built locally, never committed)
+data/raw/
+data/*.db
+data/*.db-journal
+data/models/
+data/synthetic_*.jsonl
+*.pbf
+*.osm
+*.mbtiles
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Logs
+*.log
