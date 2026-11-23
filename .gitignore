@@ -3,6 +3,7 @@ data/raw/
 data/*.db
 data/*.db-journal
 data/models/
+data/tiles/
 data/synthetic_*.jsonl
 *.pbf
 *.osm

@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ژئوکدر تهران — آدرس به لوکیشن</title>
-<link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
-<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
-<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<link href="/static/vendor/vazirmatn.css" rel="stylesheet">
+<link href="/static/vendor/maplibre-gl.css" rel="stylesheet">
+<script src="/static/vendor/maplibre-gl.js"></script>
 <style>
   :root { --bg:#0f1420; --panel:#171e2e; --line:#26304a; --txt:#e8ecf5; --muted:#8b96b0; --acc:#4f8cff; --ok:#2ecc71; --warn:#f1c40f; --bad:#e74c3c; }
   * { box-sizing:border-box; margin:0; padding:0; }
@@ -69,10 +69,19 @@ const map = new maplibregl.Map({
   container: 'map',
   style: {
     version: 8,
-    sources: { osm: { type: 'raster', tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize: 256, attribution: '© OpenStreetMap contributors' } },
-    layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
+    sources: {
+      muni: {
+        type: 'raster',
+        tiles: ['/tiles/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        minzoom: 10,
+        maxzoom: 16,
+        attribution: '© شهرداری تهران — نقشه معابر (ذخیره محلی)'
+      }
+    },
+    layers: [{ id: 'muni', type: 'raster', source: 'muni' }]
   },
-  center: TEHRAN, zoom: 11
+  center: TEHRAN, zoom: 11, minZoom: 10, maxZoom: 16
 });
 map.addControl(new maplibregl.NavigationControl(), 'top-left');
 

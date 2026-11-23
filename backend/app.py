@@ -4,8 +4,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 
 from . import db
@@ -84,6 +84,16 @@ def stats():
     return {"streets": n_streets, "learned": n_learned, "neighborhoods": n_neigh,
             "districts": n_dist, "feedback": n_fb, "parser_available": parser.available,
             "municipality_streets": n_muni_streets, "municipality_addresses": n_muni_addr}
+
+
+@app.get("/tiles/{z}/{x}/{y}.png")
+def tile(z: int, x: int, y: int):
+    """Locally cached Tehran Municipality basemap tile (offline at runtime)."""
+    path = ROOT / "data" / "tiles" / str(z) / str(x) / f"{y}.png"
+    if not (10 <= z <= 16 and path.is_file()):
+        return Response(status_code=404)
+    return FileResponse(path, media_type="image/png",
+                        headers={"Cache-Control": "public, max-age=86400"})
 
 
 @app.get("/")
